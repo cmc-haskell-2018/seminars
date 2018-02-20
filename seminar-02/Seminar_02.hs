@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wall -fno-warn-type-defaults #-}
 module Part_01 where
 
 -- * Задание 1.1
@@ -24,7 +25,7 @@ module Part_01 where
 -- f4 :: (a -> b -> b) -> b -> [a] -> b
 --
 -- Какие реализации удовлетворяют дополнительному условию?
--- f2 (+) 0 [1, 2, 3] = 7
+-- f4 (+) 0 [1, 2, 3] = 7
 
 -- * Задание 1.5
 --
@@ -57,6 +58,16 @@ module Part_01 where
 -- >>> startsWith 9 726
 -- False
 
+-- этот вариант мы реализовали на семинаре
+-- 
+-- Дополнительное задание:
+-- попробуйте реализовать функцию без использования show
+startsWith :: Int -> Int -> Bool
+startsWith n m = and (zipWith (==) ns ms)
+  where
+    ns = show n
+    ms = show m
+
 -- * Задание 3.2
 --
 -- Опишите все возможные реализации функции secret.
@@ -69,9 +80,35 @@ module Part_01 where
 
 -- * Задание 3.4
 --
+-- Сколько возможных реализаций у функции makeSecret?
+-- makeSecret :: Int -> (Int -> a) -> a
+--
+-- Используйте параметрический полиморфизм,
+-- чтобы обобщить тип фукнции makeSecret и
+-- оставить ровно одну реализацию.
+
+-- * Задание 3.5
+--
 -- Реализуйте функцию guessNumber:
 -- guessNumber :: ((Int -> Bool) -> Bool) -> Int
 --
--- >>> guessNumber (secret 3)
+-- >>> guessNumber (makeSecret 3)
 -- 3
 
+-- этот вариант мы реализовали на семинаре,
+-- но он очень медленный (перебирает все числа)
+-- 
+-- Дополнительное задание:
+-- попробуйте улучшить скорость работы этой функции
+-- 
+-- Дополнительное задание:
+-- какая лучшая алгоритмическая сложность возможна
+-- функции guessNumber?
+guessNumber :: ((Int -> Bool) -> Bool) -> Int
+guessNumber f =
+  case candidates of
+    [] -> 0
+    (x:_) -> x
+  where
+    candidates = filter check [minBound..maxBound]
+    check n = f (== n)
