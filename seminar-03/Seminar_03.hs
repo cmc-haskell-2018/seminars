@@ -1,5 +1,7 @@
 module Seminar_03 where
 
+import Data.List (foldl')
+
 -- * Часть 1
 
 -- | Наименование товара.
@@ -27,6 +29,20 @@ sampleSimpleCart =
   , ("oranges", 27.0)
   ]
 
+simpleCartTotal1 :: SimpleCart -> RUB
+simpleCartTotal1 [] = 0
+simpleCartTotal1 (item : items)
+  = snd item + simpleCartTotal1 items
+
+simpleCartTotal2 :: SimpleCart -> RUB
+simpleCartTotal2 = foldl' f 0
+  where
+    f :: RUB -> Item -> RUB
+    f total (_, cost) = total + cost
+
+simpleCartTotal3 :: SimpleCart -> RUB
+simpleCartTotal3 = sum . map snd
+
 -- Задание 1.2
 -- Реализуйте функцию подсчёта суммы корзины
 -- c учётом количества товара на каждой позиции.
@@ -41,6 +57,23 @@ sampleCart =
   , (2.0, ("oranges", 27.0))
   ]
 
+amountCost :: (Amount, Item) -> RUB
+amountCost (amount, (_, cost)) = amount * cost
+
+cartTotal1 :: Cart -> RUB
+cartTotal1 [] = 0
+cartTotal1 (item : items)
+  = amountCost item + cartTotal1 items
+
+cartTotal2 :: Cart -> RUB
+cartTotal2 = foldl' f 0
+  where
+    f :: RUB -> (Amount, Item) -> RUB
+    f total item = total + amountCost item
+
+cartTotal3 :: Cart -> RUB
+cartTotal3 = sum . map amountCost
+
 -- Задание 1.3
 -- Реализуйте функцию отображения содержимого корзины.
 
@@ -50,6 +83,33 @@ sampleCart =
 -- 2.0 x oranges (27.0 RUB) = 54.0 RUB
 -- -----------------------------------
 -- Total = 88.5 RUB
+
+pprintCart :: Cart -> String
+pprintCart cart
+  = unlines items
+  ++ line ++ "\n"
+  ++ pprintCartTotal cart
+  where
+    items = map pprintItem cart
+    n = maximum (map length items)
+    line = replicate n '-'
+
+pprintCartTotal :: Cart -> String
+pprintCartTotal cart = "Total = "
+  ++ show (cartTotal3 cart) ++ " RUB"
+
+pprintItem :: (Amount, Item) -> String
+pprintItem row@(amount, (name, cost))
+  = show amount ++ " x " ++ name
+  ++ " (" ++ show cost ++ " RUB) = "
+  ++ show (amountCost row) ++ " RUB"
+
+
+
+
+
+
+
 
 -- * Часть 2
 
@@ -67,7 +127,8 @@ type Attempts = Int
 -- Сложность задачи определяется как среднее количество попыток решить задачу.
 
 -- | Статистика решения задачи студентами.
-type ProblemStats = [(StudentName, Maybe Attempts)]
+type ProblemStats
+  = [(StudentName, Maybe Attempts)]
 
 -- | Пример статистики решения задачи.
 sampleProblemStats :: ProblemStats
@@ -86,6 +147,23 @@ sampleProblemStats2 =
   , ("Сидоров",  Just 1)
   , ("Васильев", Just 2)
   ]
+
+type Difficulty = Double
+
+problemDifficulty1
+  :: ProblemStats -> Maybe Difficulty
+problemDifficulty1 [] = Nothing
+problemDifficulty1 stats
+  = Just (totalAttempts stats / totalStudents)
+  where
+    f Nothing         = 0
+    f (Just attempts) = fromIntegral attempts
+
+    totalAttempts = sum . map f . map snd
+
+    totalStudents = fromIntegral (length stats)
+
+
 
 -- |
 -- >>> problemDifficulty sampleProblemStats
@@ -128,3 +206,14 @@ type StudentStats = [(ProblemName, Maybe Attempts)]
 -- |
 -- >>> zero (\x -> x^2 - 2*x)
 -- 2.0
+
+approximations
+  :: (Double -> Double) -- ^ функция
+  -> (Double -> Double) -- ^ производная
+  -> Double    -- ^ начальное приближение
+  -> [Double]  -- ^ последовательность приближений
+approximations f f' x0
+  = x0 : approximations f f' x1
+  where
+    x1 = x0 - f x0 / f' x0
+
