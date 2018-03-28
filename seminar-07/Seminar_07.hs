@@ -1,5 +1,8 @@
+{-# LANGUAGE DeriveFoldable #-}
+{-# OPTIONS_GHC -Wall #-}
 module Seminar_07 where
 
+import Data.Monoid
 import Data.List (intersperse, intercalate)
 import System.IO (hSetBuffering, stdin, BufferMode(..))
 
@@ -18,12 +21,28 @@ fromSortedList (SortedList xs) = xs
 -- ** Задание 1.1
 -- Реализуйте моноид для SortedList.
 --
--- instance Monoid ...
+instance Ord a => Monoid (SortedList a) where
+  mempty = SortedList []
+  SortedList xs `mappend` SortedList ys
+    = SortedList (merge xs ys)
+
+merge :: Ord a => [a] -> [a] -> [a]
+merge [] ys = ys
+merge xs [] = xs
+merge (x:xs) (y:ys)
+  | x <= y    = x : merge xs (y:ys)
+  | otherwise = y : merge (x:xs) ys
+
+singleton :: a -> SortedList a
+singleton x = SortedList [x]
 
 -- ** Задание 1.2
 -- Реализуйте функцию сортировки, используя SortedList.
 -- 
--- sortViaSortedList :: Ord a => [a] -> [a]
+sortViaSortedList
+  :: (Ord a, Foldable f) => f a -> [a]
+sortViaSortedList xs
+  = fromSortedList (foldMap singleton xs)
 
 -- ** Задание 1.3
 -- Оцените алгоритмическую сложность sortViaSortedList.
@@ -31,7 +50,47 @@ fromSortedList (SortedList xs) = xs
 -- ** Задание 1.4
 -- Определите тип двоичного дерева.
 --
--- data BinTree ...
+data BinTree a
+  = Empty
+  | Leaf a
+  | Node (BinTree a) (BinTree a)
+  deriving (Eq, Show, Foldable)
+-- 
+-- instance Foldable BinTree where
+-- --   foldMap
+-- --     :: Monoid m => (a -> m) -> BinTree a -> m
+--   foldMap f Empty    = mempty
+--   foldMap f (Leaf x) = f x
+--   foldMap f (Node l r)
+--     = foldMap f l `mappend` foldMap f r
+
+sampleTree :: BinTree Int
+sampleTree = Node
+  (Node
+    (Node (Leaf 5) (Leaf 2))
+    (Node (Leaf 3) (Leaf 42))
+  )
+  (Node (Leaf 13) Empty)
+
+sortBinTreeValues :: Ord a => BinTree a -> [a]
+sortBinTreeValues tree
+  = fromSortedList (foldMap singleton tree)
+
+
+
+
+binTree :: [a] -> BinTree a
+binTree xs = iteratePairs (map Leaf xs)
+
+iteratePairs :: [BinTree a] -> BinTree a
+iteratePairs [] = Empty
+iteratePairs [t] = t
+iteratePairs ts = iteratePairs (pairs ts)
+
+pairs :: [BinTree a] -> [BinTree a]
+pairs [] = []
+pairs [x] = [x]
+pairs (x:y:zs) = Node x y : pairs zs
 
 -- ** Задание 1.5
 -- Определите Foldable для BinTree
@@ -41,7 +100,8 @@ fromSortedList (SortedList xs) = xs
 -- ** Задание 1.6
 -- Реализуйте функцию сортировки списка, используя BinTree
 --
--- sortViaBinTree :: Ord a => [a] -> [a]
+sortViaBinTree :: Ord a => [a] -> [a]
+sortViaBinTree xs = sortBinTreeValues (binTree xs)
 
 -- ** Задание 1.7
 -- Оцените алгоритмическую сложность sortViaBinTree
