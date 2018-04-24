@@ -1,0 +1,5 @@
+:set prompt ">>> "
+:set prompt2 "... "
+
+import Text.Show.Pretty (pPrint)
+:set -interactive-print pPrint
